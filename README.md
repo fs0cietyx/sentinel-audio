@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/SIHLOGO.png" alt="SIH Logo" width="150"/>
+</div>
+
 # Sentinel Audio
 
 Advanced Hybrid Noise Suppression Pipeline 🎧
