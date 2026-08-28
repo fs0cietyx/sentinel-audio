@@ -3,6 +3,7 @@ import time
 import argparse
 import onnxruntime as ort
 import torch
+import soundfile as sf
 from src.inference.hybrid_filter import LMSFilter 
 
 def wav_to_spec(wav, n_fft=512, hop_length=256):
@@ -55,6 +56,9 @@ class RealtimePipeline:
         if self.use_lms:
             self.lms_filter = LMSFilter(filter_length=64, step_size=0.005)
             print("LMS Hybrid Filter initialized.")
+            
+        self.input_buffer = []
+        self.output_buffer = []
 
     def run(self, duration_sec=10):
         print(f"Starting real-time inference pipeline for {duration_sec} seconds...")
@@ -91,6 +95,8 @@ class RealtimePipeline:
                 final_output = nn_output
 
             self.audio_interface.write_chunk(final_output)
+            self.input_buffer.extend(primary_mic)
+            self.output_buffer.extend(final_output)
             time.sleep(self.audio_interface.chunk_size / self.audio_interface.sample_rate * 0.5) 
             
             if (i+1) % 50 == 0:
@@ -98,6 +104,12 @@ class RealtimePipeline:
                 
         total_time = time.time() - start_time
         print(f"Pipeline finished. Total processing time: {total_time:.2f}s for {duration_sec}s of audio.")
+        
+        # Save demonstration audio files
+        print("Saving demonstration audio to disk...")
+        sf.write("mock_noisy_input.wav", np.array(self.input_buffer), self.audio_interface.sample_rate)
+        sf.write("mock_cleaned_output.wav", np.array(self.output_buffer), self.audio_interface.sample_rate)
+        print("Done! You can play mock_noisy_input.wav and mock_cleaned_output.wav for the judges.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run real-time ANC pipeline.")
