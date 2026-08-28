@@ -1,0 +1,16 @@
+# Ignore datasets and large files
+dataset/
+*.zip
+*.tar.gz
+archive.zip
+
+# Ignore PyTorch checkpoints and ONNX models
+checkpoints/
+*.pth
+*.onnx
+*.onnx.data
+
+# Ignore Python caches
+__pycache__/
+*.pyc
+.DS_Store
