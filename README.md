@@ -4,113 +4,98 @@
 
 # Sentinel Audio
 
-Advanced Hybrid Noise Suppression Pipeline 🎧
-TEAM [YOUR TEAM NAME] : Winner 🏆 Of Smart India Hackathon 2026 (SIH 2026) 🌟
+**Advanced Hybrid Noise Suppression Pipeline**
+
+Sentinel Audio is an ultra-low latency, hardware-accelerated hybrid noise suppression system engineered for defense and mission-critical communications. Traditional signal processing fails on impulsive noises like gunshots, while modern AI models are often too slow for edge deployments. Sentinel Audio bridges this gap by combining a quantized Deep Neural Network with a classical LMS filter, achieving sub-15ms latency on FPGA fabric.
 
 ---
 
-### COMPLETE DESCRIPTION
-**PS ID :** 26052  
-**Team ID :** [Insert Team ID]  
-**PS Title :**  
-AI/ML-Driven Noise Suppression System
+## Architecture Overview
 
-**PS Description :**  
-**Background:** In defense and mission-critical communication systems, reliable speech transmission is destroyed by two fundamentally different types of noise: stationary noise (e.g., helicopter rotors) and non-stationary/impulsive noise (e.g., sudden explosions, gunshots). Traditional signal processing fails catastrophically on impulsive noise.
+The pipeline utilizes a two-stage hybrid architecture:
+1. **Stage 1 (AI Engine):** A Single-Channel Deep Complex Convolutional Recurrent Network (DCCRN) operating on the complex STFT domain erases non-stationary impulsive noise (e.g., artillery, gunshots).
+2. **Stage 2 (Classical Filter):** A lightweight Dual-Mic LMS filter cancels stationary noise (e.g., helicopter rotors, engine hum).
 
-**Situation:** Currently, military operatives suffer from massive communication breakdowns during live combat operations because AI models are either too slow for edge devices or traditional filters cannot catch explosive noise. 
+The architecture is trained using Quantization-Aware Training (QAT) to INT8 precision and exported via static ONNX memory mapping for deterministic execution on AMD PYNQ or Vitis AI edge boards.
 
-**Objective:** A real-time, hybrid hardware-accelerated pipeline tailored for edge AI (FPGA/Jetson) that isolates clean speech and suppresses both types of noise with a latency of < 15ms.
+## Key Performance Metrics
 
----
+- **Signal-to-Noise Ratio (SNR) Improvement:** > 15 dB
+- **Short-Time Objective Intelligibility (STOI):** > 0.85
+- **Perceptual Evaluation of Speech Quality (PESQ):** > 2.5
+- **Inference Latency:** < 15ms (using 512-sample processing chunks)
 
-### Aim :
-To break acoustic barriers in combat zones and provide crystal-clear mission-critical communication.
-To deploy a highly optimized Edge AI solution that saves FPGA DSP slices by combining Neural Networks with classical Signal Processing.
+## Tech Stack
 
-### Summary :
-The Sentinel Audio pipeline features a two-stage hybrid architecture. Stage 1 utilizes a hardware-hardened Single-Channel Deep Complex Convolutional Recurrent Network (DCCRN) operating on the complex STFT domain to erase non-stationary impulsive noise (gunshots). Stage 2 uses a lightweight Dual-Mic LMS filter to cancel stationary noise (helicopter hums). The entire architecture is quantized to INT8 and exported via static ONNX memory mapping for ultra-low latency execution on AMD PYNQ or Vitis AI edge boards.
+- **Frameworks:** Python, PyTorch (QAT)
+- **Audio Processing:** soundfile, librosa
+- **Evaluation:** pystoi, pesq
+- **Hardware Deployment:** ONNX Runtime, AMD Vitis AI Compiler, VART (Vitis AI Runtime)
+- **Target Silicon:** AMD PYNQ / Zynq FPGAs
 
-### Objectives :
-*   Achieve an SNR improvement of **> 15 dB**.
-*   Achieve a Short-Time Objective Intelligibility (STOI) of **> 0.85**.
-*   Achieve a Perceptual Evaluation of Speech Quality (PESQ) of **> 2.5**.
-*   Ensure Real-time Edge execution with a latency of **< 15ms** using 512-sample chunks.
-*   Successfully mix Clean Speech (LibriSpeech) and Military Noise (MAD) dynamically during training.
-*   Deploy directly onto FPGA accelerators using VART (Vitis AI Runtime).
+## Repository Structure
 
-### Status :
-We have successfully implemented these features:
-*   ✅ **Dynamic PyTorch Data Pipeline:** On-the-fly random mixing at -5dB to 15dB SNRs.
-*   ✅ **Quantization-Aware Training (QAT):** Model natively trained to simulate INT8 precision for zero hardware accuracy drop.
-*   ✅ **Static ONNX Export:** Latency capped at 10-15ms by exporting precisely for 3-frame STFT chunks without dynamic axes.
-*   ✅ **Real-Time Edge Simulation:** Complete mock hardware pipeline written in Python.
-*   ✅ **Physical FPGA Deployment Scripts:** `vai_c_xir` compilation and PYNQ `DpuOverlay` scripts fully written.
+```
+.
+├── assets/
+├── checkpoints/          # Contains fpga_model.onnx and weights
+├── dataset/              # LibriSpeech and Military Audio Dataset (MAD)
+├── docs/                 # System architecture and deployment documentation
+└── src/
+    ├── data/             # Dynamic dataset mixing and augmentation
+    ├── inference/        # ONNX export, simulation, and PYNQ deployment
+    ├── models/           # DCCRN network definition and QAT stubs
+    └── training/         # PyTorch training loop and custom MultiLoss
+```
 
-### Tech Stacks Used :
-⦿ **AI Engine / ML Model :**
-*   Python
-*   PyTorch (QAT)
+## Getting Started
 
-⦿ **Data & Evaluation :**
-*   LibriSpeech & Military Audio Dataset (MAD)
-*   `pystoi`, `pesq`, `soundfile`
+### 1. Model Training (GPU Environment)
 
-⦿ **Edge Deployment (Hardware) :**
-*   ONNX Runtime
-*   AMD Vitis AI Compiler
-*   PYNQ / Zynq FPGAs
+The model leverages dynamic PyTorch data pipelines to randomly mix clean speech with military noise at varying SNRs (-5dB to 15dB) on the fly. 
 
-⦿ **Server & Compute :**
-*   Google Colab (T4 GPU)
+1. Prepare your environment (Google Colab T4 GPU recommended).
+2. Ensure the LibriSpeech and MAD datasets are located in the `dataset/` directory.
+3. Execute the provided Jupyter notebook `SIH26052_Colab_Training.ipynb`.
+4. The QAT-hardened ONNX model will be exported to `checkpoints/fpga_model.onnx`.
 
----
+### 2. Desktop Edge Simulation
 
-### Important URLS :
-⭐️ **Pitch Deck :** [Click Here to View](docs/pitch-deck-outline.md)
+To test the ONNX model and simulate the edge dual-mic hardware environment on a local machine:
 
-⭐️ **Architecture Overview :** [Click Here to View](docs/overview.md)
+```bash
+# Clone the repository
+git clone https://github.com/fs0cietyx/sentinel-audio.git
+cd sentinel-audio
 
-⭐️ **Build Plan :** [Click Here to View](docs/36-hour-build-plan.md)
+# Install dependencies
+pip install -r requirements.txt
 
----
+# Run the real-time simulation pipeline
+python3 src/inference/realtime_pipeline.py --model checkpoints/fpga_model.onnx
+```
 
-### Project Created & Maintained By
-❤ **Team [YOUR TEAM NAME]**
-*   [Member 1 Name]
-*   [Member 2 Name]
-*   [Member 3 Name]
-*   [Member 4 Name]
-*   [Member 5 Name]
-*   [Member 6 Name]
+### 3. Physical FPGA Deployment (PYNQ)
 
-*(Add LinkedIn links here)*
+To deploy the pipeline onto physical AMD PYNQ silicon, the ONNX graph must be compiled into an XModel for the Deep Learning Processor Unit (DPU).
 
----
+1. Compile the ONNX model using the official Vitis AI Docker container:
+   ```bash
+   ./src/inference/compile_for_pynq.sh
+   ```
+2. Transfer the resulting `dccrn_anc.xmodel` to your target PYNQ board.
+3. Execute the hardware-accelerated VART inference script on the board:
+   ```bash
+   python3 src/inference/pynq_deployment.py --model checkpoints/dccrn_anc.xmodel
+   ```
 
-### How-to-run
+## Documentation
 
-#### 1. Training (Google Colab)
-1. Zip this workspace and upload it to Google Colab.
-2. Open `SIH26052_Colab_Training.ipynb` and execute all cells using a T4 GPU.
-3. Download the resulting `checkpoints/fpga_model.onnx`.
+For a deeper dive into the system design, hardware constraints, and build plans, refer to the `docs/` directory:
+- `docs/overview.md` - System Architecture
+- `docs/plan-edge-deployment.md` - Edge Target Specifications
+- `docs/pitch-deck-outline.md` - High-level presentation outline
 
-#### 2. Desktop Edge Simulation
-To simulate the Jetson/FPGA edge environment processing the dual-mic streams on your PC:
-1. Clone this repository.
-2. Install requirements: `pip install -r requirements.txt`
-3. Run the realtime pipeline:
-   `python3 src/inference/realtime_pipeline.py --model checkpoints/fpga_model.onnx`
+## License
 
-#### 3. Physical FPGA Deployment (PYNQ Board)
-1. Compile the ONNX model to an XModel inside the Vitis AI Docker container:
-   `./src/inference/compile_for_pynq.sh`
-2. Move `dccrn_anc.xmodel` to your PYNQ board.
-3. Run the hardware-accelerated DPU inference wrapper:
-   `python3 src/inference/pynq_deployment.py --model checkpoints/dccrn_anc.xmodel`
-
----
-
-### Support
-💙 If you like this project, give it a ⭐ and share it with friends! 
-🙏 THANK YOU 🙏
+This project is licensed under the MIT License. See the `LICENSE` file for details.
