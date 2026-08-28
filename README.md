@@ -7,6 +7,16 @@ Our solution employs a **two-stage hybrid architecture**:
 1. **Single-Channel Deep Complex Convolutional Recurrent Network (DCCRN)**: An AI engine operating in the complex STFT domain to eliminate highly unpredictable, non-stationary impulsive noise.
 2. **Dual-Mic LMS Wrapper**: A lightweight classical adaptive filter acting on a reference microphone to eliminate stationary background noise.
 
+
+## Tech Stack
+* **Language/Framework:** Python, PyTorch
+* **Model:** DCCRN (Deep Complex CRN)
+* **Audio I/O:** `soundfile`
+* **Evaluation:** `pystoi`, `pesq`
+* **Deployment:** ONNX, Vitis AI, AMD PYNQ
+* **Training Compute:** Google Colab (T4 GPU)
+* **Datasets:** LibriSpeech, MAD (Military Audio Dataset)
+
 ## Key Features
 - **Hardware-First Engineering**: Built with standard ReLUs and exported with static memory axes to perfectly map onto FPGA DSP slices (AMD PYNQ / Vitis AI).
 - **Quantization-Aware Training (QAT)**: PyTorch INT8 simulation natively built into the training loop, ensuring STOI and PESQ metrics do not crash when compiled for edge AI boards.
