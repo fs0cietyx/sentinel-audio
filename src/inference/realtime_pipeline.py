@@ -2,7 +2,22 @@ import numpy as np
 import time
 import argparse
 import onnxruntime as ort
-from src.inference.hybrid_filter import LMSFilter # Fixed import based on location
+import torch
+from src.inference.hybrid_filter import LMSFilter 
+
+def wav_to_spec(wav, n_fft=512, hop_length=256):
+    window = torch.hann_window(n_fft, device=wav.device)
+    stft = torch.stft(wav, n_fft=n_fft, hop_length=hop_length, window=window, return_complex=True)
+    stft_real = torch.view_as_real(stft)
+    spec = stft_real.permute(0, 3, 1, 2)
+    return spec
+
+def spec_to_wav(spec, n_fft=512, hop_length=256):
+    spec = spec.permute(0, 2, 3, 1)
+    stft = torch.view_as_complex(spec.contiguous())
+    window = torch.hann_window(n_fft, device=stft.device)
+    wav = torch.istft(stft, n_fft=n_fft, hop_length=hop_length, window=window)
+    return wav
 
 class AudioInterfaceMock:
     """Mocks the hardware audio interface for dual-microphone input and headphone output."""
@@ -51,14 +66,27 @@ class RealtimePipeline:
             primary_mic, reference_mic = self.audio_interface.read_chunk()
             
             if self.ort_session:
-                input_tensor = primary_mic.reshape(1, 1, -1).astype(np.float32)
-                nn_output = self.ort_session.run(None, {self.input_name: input_tensor})[0]
-                nn_output = nn_output.flatten()
+                # 1. Convert waveform to spectrogram tensor
+                wav_tensor = torch.tensor(primary_mic, dtype=torch.float32).unsqueeze(0)
+                spec = wav_to_spec(wav_tensor) # (1, 2, 257, 3)
+                
+                # 2. Run ONNX Inference
+                input_tensor = spec.numpy().astype(np.float32)
+                nn_output_spec = self.ort_session.run(None, {self.input_name: input_tensor})[0]
+                
+                # 3. Convert spectrogram back to waveform
+                out_spec_tensor = torch.tensor(nn_output_spec)
+                nn_output_wav = spec_to_wav(out_spec_tensor).squeeze().numpy()
+                
+                # Ensure lengths match
+                min_len = min(len(primary_mic), len(nn_output_wav))
+                nn_output = nn_output_wav[:min_len]
             else:
                 nn_output = primary_mic - 0.5 * reference_mic 
             
             if self.use_lms:
-                final_output, _ = self.lms_filter.process(reference_mic, nn_output)
+                # LMS uses the reference mic to cancel stationary noise from the AI output
+                final_output, _ = self.lms_filter.process(reference_mic[:len(nn_output)], nn_output)
             else:
                 final_output = nn_output
 

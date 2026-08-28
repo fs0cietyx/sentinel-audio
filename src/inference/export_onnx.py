@@ -13,6 +13,10 @@ def export_to_onnx(model_path, output_path, dummy_input_shape=(1, 1, 16000)):
             
     model = DCCRNPlaceholder()
     
+    # Prepare model for QAT so the architecture matches the saved weights
+    model.qconfig = torch.ao.quantization.get_default_qat_qconfig('fbgemm')
+    torch.ao.quantization.prepare_qat(model, inplace=True)
+    
     if os.path.exists(model_path):
         model.load_state_dict(torch.load(model_path, map_location='cpu'))
         print("Model weights loaded successfully.")
@@ -20,10 +24,11 @@ def export_to_onnx(model_path, output_path, dummy_input_shape=(1, 1, 16000)):
         print("Warning: Model weights not found, exporting with random initialization.")
         
     model.eval()
+    torch.ao.quantization.convert(model, inplace=True)
 
     # The real model expects a complex spectrogram: (Batch, 2, Freq, Time)
-    # Using a standard 1-second audio chunk at 16kHz with n_fft=512 -> ~63 frames
-    dummy_input_shape = (1, 2, 257, 63) 
+    # Using a 512-sample chunk (10-15ms latency) at 16kHz with n_fft=512 -> 3 frames
+    dummy_input_shape = (1, 2, 257, 3) 
     dummy_input = torch.randn(*dummy_input_shape)
 
     print(f"Exporting model to ONNX format at {output_path}...")
@@ -32,7 +37,7 @@ def export_to_onnx(model_path, output_path, dummy_input_shape=(1, 1, 16000)):
         dummy_input, 
         output_path, 
         export_params=True, 
-        opset_version=11, 
+        opset_version=13, 
         do_constant_folding=True,
         input_names=['input'], 
         output_names=['output']

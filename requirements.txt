@@ -1,0 +1,20 @@
+# PyTorch Ecosystem
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# Scientific & Processing
+numpy>=1.21.0
+soundfile>=0.12.1
+
+# Metrics
+pystoi>=0.3.3
+pesq>=0.0.4
+
+# ONNX / Inference
+onnx>=1.14.0
+onnxruntime>=1.15.0
+
+# Utilities
+tqdm>=4.65.0
+
+# Note: Vitis AI Edge Libraries (xir, vart) and pynq are installed directly via PYNQ image on the target hardware.

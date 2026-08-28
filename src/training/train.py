@@ -70,7 +70,7 @@ def train():
     print("Model configured for Quantization-Aware Training (INT8 Simulation).")
     # ---------------------------------------------------------
 
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = optim.Adam(model.parameters(), lr=1e-4)
     
     # Grab both .wav and .flac (LibriSpeech uses .flac)
     clean_speech_files = glob.glob("dataset/clean_speech/**/*.wav", recursive=True) + glob.glob("dataset/clean_speech/**/*.flac", recursive=True)
@@ -101,6 +101,8 @@ def train():
     best_loss = float('inf')
     os.makedirs('checkpoints', exist_ok=True)
     
+    criterion = MultiLoss()
+    
     for epoch in range(epochs):
         model.train()
         epoch_loss = 0.0
@@ -128,6 +130,10 @@ def train():
             loss, loss_dict = criterion(pred_wav, clean_wav, pred_spec, clean_spec)
             
             loss.backward()
+            
+            # Add gradient clipping to prevent explosion
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
+            
             optimizer.step()
             
             epoch_loss += loss.item()

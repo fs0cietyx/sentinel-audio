@@ -18,13 +18,13 @@ class SISNRLoss(nn.Module):
             Negative SI-SNR loss (to be minimized).
         """
         # Ensure zero-mean
-        preds = preds - torch.mean(preds, dim=1, keepdim=True)
-        targets = targets - torch.mean(targets, dim=1, keepdim=True)
+        preds = preds - torch.mean(preds, dim=-1, keepdim=True)
+        targets = targets - torch.mean(targets, dim=-1, keepdim=True)
         
         # <s, s>
-        target_energy = torch.sum(targets ** 2, dim=1, keepdim=True) + self.eps
+        target_energy = torch.sum(targets ** 2, dim=-1, keepdim=True) + self.eps
         # <s_hat, s>
-        dot_product = torch.sum(preds * targets, dim=1, keepdim=True)
+        dot_product = torch.sum(preds * targets, dim=-1, keepdim=True)
         
         # s_target = (<s_hat, s> / <s, s>) * s
         s_target = (dot_product / target_energy) * targets
@@ -33,8 +33,8 @@ class SISNRLoss(nn.Module):
         e_noise = preds - s_target
         
         # SI-SNR = 10 * log10(||s_target||^2 / ||e_noise||^2)
-        s_target_energy = torch.sum(s_target ** 2, dim=1, keepdim=True)
-        e_noise_energy = torch.sum(e_noise ** 2, dim=1, keepdim=True)
+        s_target_energy = torch.sum(s_target ** 2, dim=-1, keepdim=True)
+        e_noise_energy = torch.sum(e_noise ** 2, dim=-1, keepdim=True)
         
         si_snr = 10 * torch.log10((s_target_energy + self.eps) / (e_noise_energy + self.eps))
         
